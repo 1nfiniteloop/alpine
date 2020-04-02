@@ -1,69 +1,64 @@
 #!/bin/bash
 
 # Configuration
-readonly DEFAULT_DST_PATH=/etc/patch.d
+readonly PATCH_DIR=/etc/patch.d
+readonly BACKUP_SUFFIX="~"
+readonly WORKDIR=/tmp/patch
 
 
-function error() {
-    local error_=$1
-    >&2 echo -e "ERROR: ${error_}"
+error()
+{
+  local error_="${@}"
+  >&2 echo -e "ERROR: ${error_}"
+  false
 }
 
-function print_usage_and_exit() {
-    echo -e "\n\tUsage: $(basename $0) [--dst ${DEFAULT_DST_PATH}] <FILE>\n"
-    exit 1
+print_usage_and_exit()
+{
+  echo -e "\n\tUsage: ${0##*/} [--dst ${PATCH_DIR}] <file>\n"
+  exit 1
 }
 
-function file_exists() {
-    local file_=$1
-    [ -e ${file_} ] || \
-        (error "file '${file_}' does not exists." && false)
-    return
+create_patch()
+{
+  local file_=$(readlink -f ${1})
+  local dst_path=${2}
+  local file_name=${file_##*/}
+  local file_path=${file_%${file_name}}
+  mkdir -p ${WORKDIR}/{a,b}/${file_path} ${PATCH_DIR} \
+    && ln -s ${file_}${BACKUP_SUFFIX} ${WORKDIR}/a${file_} \
+    && ln -s ${file_} ${WORKDIR}/b${file_} \
+    && (cd ${WORKDIR} && diff -r a/ b/ > ${dst_path}/${file_name}.patch)
+  rm -r ${WORKDIR}
 }
 
-function orig_file_exists() {
-    local file_=$1
-    [ -e ${file_}~ ] || \
-        (error "file '${file_}~' does not exists, cannot make a patch without the original file." && false)
-    return
-}
-
-function create_patch() {
-    local file_=$(readlink -f $1)
-    local file_path=$(dirname ${file_})
-    local file_name=$(basename ${file_})
-    local dst_path=$2
-    local workdir=/tmp/mkpatch
-    mkdir -p ${workdir}/{a,b}/${file_path} && \
-        ([ -e ${workdir}/a${file_} ] || ln -s ${file_}~ ${workdir}/a${file_}) && \
-        ([ -e ${workdir}/b${file_} ] || ln -s ${file_}  ${workdir}/b${file_}) && \
-        (cd ${workdir} && diff -r a/ b/ > ${dst_path}/${file_name}.patch; [ $? -lt 2 ])
-    return
-}
-
-POSITIONAL=()
+positional=()
 while [[ $# -gt 0 ]]; do
-    key="$1"
-    case $key in
-        --dst)
-        DST_PATH=$2
-        shift
-        shift
-        ;;
-        *)
-        POSITIONAL+=("$1")
-        shift
-        ;;
-    esac
+  key="${1}"
+  case $key in
+    --dst)
+      dst_path=${2}
+      shift
+      shift
+    ;;
+    *)
+      positional+=("${1}")
+      shift
+    ;;
+  esac
 done
 
-set -- "${POSITIONAL[@]}"
+set -- "${positional[@]}"
 
-readonly FILE=$1
+readonly file="${1}"
 
-[ -n "${FILE}" ] && \
-    file_exists ${FILE} && \
-    orig_file_exists ${FILE} && \
-    create_patch ${FILE} ${DST_PATH:-$DEFAULT_DST_PATH} || \
-    print_usage_and_exit
-
+if [[ -z "${file}" ]]; then
+  print_usage_and_exit
+elif [[ ! -e "${file}" ]]; then
+  error "file '${file}' does not exists."
+elif [[ ! -e "${file}${BACKUP_SUFFIX}" ]]; then
+  error "file: ${file}${BACKUP_SUFFIX} does not exists," \
+        "can't make a patch without the original file."
+else
+  create_patch ${file} ${dst_path:-$PATCH_DIR}
+fi

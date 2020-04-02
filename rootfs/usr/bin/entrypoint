@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-for FILE in $(find /etc/entrypoint.d -type f -iname *.sh | sort); do
-    source ${FILE}
+for file in $(find /etc/entrypoint.d -type f -iname '*.sh' |sort); do
+  source ${file}
 done
 
 exec $@

@@ -5,22 +5,17 @@ readonly PATCH_DIR=/etc/patch.d
 readonly BACKUP_SUFFIX="~"
 
 
-function is_already_patched() {
-    local patch_=$1
-    local file_=$(lsdiff --strip=1 $1)
-    [ -e "${file_}${BACKUP_SUFFIX}" ]
-    return 
+apply_patch_once()
+{
+  local patch_file="${1}"
+  local file=$(lsdiff --strip=1 ${patch_file})
+  if [[ -e "${file}${BACKUP_SUFFIX}" ]]; then
+    patch --backup --suffix=${BACKUP_SUFFIX} -p1 < ${patch_file}
+  fi
 }
 
-function apply_patch() {
-    local patch_=$1
-    patch --backup --suffix=${BACKUP_SUFFIX} -p1 < ${patch_}
-    return
-}
-
-if [ -e ${PATCH_DIR} ]; then
-    for PATCH in $(find ${PATCH_DIR} -type f -iname '*.patch'); do
-        is_already_patched ${PATCH} || \
-            apply_patch ${PATCH}
-    done
+if [[ -e ${PATCH_DIR} ]]; then
+  for patch_file in $(find ${PATCH_DIR} -type f -iname '*.patch' |sort); do
+    apply_patch_once ${patch_file}
+  done
 fi
