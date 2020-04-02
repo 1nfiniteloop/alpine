@@ -18,8 +18,9 @@ function apply_patch() {
     return
 }
 
-for PATCH in $([ -e ${PATCH_DIR} ] && find ${PATCH_DIR} -type f -iname '*.patch'); do
-    is_already_patched ${PATCH} || \
-        apply_patch ${PATCH}
-done
-
+if [ -e ${PATCH_DIR} ]; then
+    for PATCH in $(find ${PATCH_DIR} -type f -iname '*.patch'); do
+        is_already_patched ${PATCH} || \
+            apply_patch ${PATCH}
+    done
+fi
