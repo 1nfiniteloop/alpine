@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+readonly CONFIG_PATH=/etc/entrypoint.d
+
+for file in $(find ${CONFIG_PATH} -type f -iname '*.sh' |sort); do
+  source ${file}
+done
+
+exec $@

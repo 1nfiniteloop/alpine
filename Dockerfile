@@ -9,7 +9,7 @@ RUN apk update \
         s6 \
     && rm -r /var/cache/apk/*
 
-ADD rootfs /
+ADD overlay /
 
-ENTRYPOINT ["/usr/bin/entrypoint"]
-CMD ["/bin/s6-svscan", "/etc/s6"]
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
+CMD ["/bin/s6-svscan", "/etc/services.d"]
