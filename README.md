@@ -47,13 +47,13 @@ an overlay file into the container.
 
 1. Start container with a bind-mount:
 
-      docker run \
-        --rm \
-        -it \
-        --name alpine \
-        --user $(id -u):$(id -g) \
-        --volume $(pwd)/overlay/etc/patch.d:/etc/patch.d \
-        1nfiniteloop/alpine:latest /bin/bash -l
+        docker run \
+          --rm \
+          -it \
+          --name alpine \
+          --user $(id -u):$(id -g) \
+          --volume $(pwd)/overlay/etc/patch.d:/etc/patch.d \
+          1nfiniteloop/alpine:latest /bin/bash -l
 
 2. Create a copy of the original configuration file, to diff against. Example:
    `cp /etc/inputrc /etc/inputrc~`.
